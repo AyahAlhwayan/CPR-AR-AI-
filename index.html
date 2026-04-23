@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>CPR AR AI Trainer - Expert Edition</title>
+    <title>CPR AR Trainer - Professional Edition</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
     
     <style>
       :root {
@@ -29,7 +26,11 @@
         display: none; animation: pulse 1.5s infinite; pointer-events: auto;
       }
 
-      @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
 
       .overlay-page {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -39,73 +40,97 @@
       }
 
       .glass-card {
-        background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border-radius: 35px; padding: 40px 25px; width: 85%; max-width: 380px;
+        background: var(--glass); backdrop-filter: blur(20px);
+        border-radius: 35px; padding: 30px; width: 85%; max-width: 450px;
         border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 25px 50px rgba(0,0,0,0.6);
         position: relative;
       }
 
-      .uni-logo-card {
+      .uni-logo {
         position: absolute; top: 20px; left: 20px; width: 50px; height: auto;
       }
 
       .how-to-use {
         text-align: left; background: rgba(0,0,0,0.3); padding: 15px;
-        border-radius: 15px; margin: 20px 0; font-size: 0.85rem; line-height: 1.4;
+        border-radius: 15px; margin: 20px 0; font-size: 0.9rem; line-height: 1.4;
       }
       .how-to-use b { color: var(--accent); }
 
       .btn-main {
-        background: #fff; color: #1e3c72; padding: 15px 40px; border: none;
-        border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer;
-        width: 100%; max-width: 250px;
+        background: #fff; color: #1e3c72; padding: 18px 50px; border: none;
+        border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer;
+        transition: 0.3s;
       }
 
-      #ar-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: none; pointer-events: none; }
+      #ar-ui {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1000; display: none; pointer-events: none;
+      }
 
       .progress-container {
         position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
         width: 85%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 10px;
       }
 
-      #progress-bar { width: 16.6%; height: 100%; background: var(--accent); border-radius: 10px; transition: 0.8s ease; }
+      #progress-bar {
+        width: 16.6%; height: 100%; background: var(--accent);
+        border-radius: 10px; transition: 0.8s ease;
+      }
 
-      .instruction-panel { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; pointer-events: auto; }
+      .instruction-panel {
+        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+        width: 90%; pointer-events: auto;
+      }
 
-      .info-box { background: rgba(0, 0, 0, 0.85); color: white; padding: 25px; border-radius: 25px; border-left: 6px solid var(--accent); margin-bottom: 20px; }
+      .info-box {
+        background: rgba(0, 0, 0, 0.85); color: white; padding: 25px;
+        border-radius: 25px; border-left: 6px solid var(--accent); margin-bottom: 20px;
+      }
 
       .controls { display: flex; gap: 12px; }
       
-      .btn-next { flex: 3; padding: 20px; border-radius: 50px; border: none; color: white; font-weight: bold; background: var(--emergency-red); font-size: 1.2rem; cursor: pointer; }
+      .btn-next {
+        flex: 3; padding: 20px; border-radius: 50px; border: none;
+        color: white; font-weight: bold; background: var(--emergency-red);
+        font-size: 1.2rem; cursor: pointer;
+      }
 
-      #start-cpr-btn { background: var(--success-green); color: #000; display: none; }
-      
-      #call-step4-btn { background: #ffeb3b; color: #000; display: none; }
+      #start-cpr-btn {
+        background: var(--success-green); color: #000; display: none;
+      }
 
-      .btn-reset { flex: 1; background: #333; color: #fff; border-radius: 50px; border: 1px solid #555; font-weight: bold; cursor: pointer; }
+      .btn-reset {
+        flex: 1; background: #333; color: #fff; border-radius: 50px; border: 1px solid #555;
+        font-weight: bold; cursor: pointer;
+      }
 
-      #cpr-counter { font-size: 6rem; color: #ffeb3b; font-weight: 900; display: none; text-shadow: 0 0 30px rgba(255,235,59,0.8); text-align: center; margin-bottom: 15px; }
+      #cpr-counter {
+        font-size: 6rem; color: #ffeb3b; font-weight: 900; display: none;
+        text-shadow: 0 0 30px rgba(255,235,59,0.8); text-align: center; margin-bottom: 15px;
+      }
 
       #finish-page { display: none; opacity: 0; }
     </style>
   </head>
 
   <body>
+
     <button id="sos-btn" class="emergency-btn" onclick="window.location.href='tel:112'">CALL 112 📞</button>
 
     <div id="landing-page" class="overlay-page">
       <div class="glass-card">
-        <img src="HSA.png" class="uni-logo-card" alt="HSA Logo">
-        <h1 style="margin-top: 40px;">CPR AR MISSION</h1>
-        <p>Interactive Training with AI Detection</p>
+        <img src="HSA.png" class="uni-logo">
+        <h1>CPR AR MISSION</h1>
+        <p>Interactive Training Simulation</p>
         
         <div class="how-to-use">
-          <p><b>1. AI Scanner:</b> We use PoseNet to detect the body.</p>
+          <p><b>1. Camera:</b> Allow camera access when prompted.</p>
           <p><b>2. Marker:</b> Aim camera at the <b>HIRO</b> marker.</p>
-          <p><b>3. Mapping:</b> Guidance will appear on the victim's chest.</p>
+          <p><b>3. Steps:</b> Follow the 3D visual aids for each step.</p>
+          <p><b>4. Compressions:</b> Match your pace with the <b>Beeps</b> and <b>Hand</b> animation.</p>
         </div>
 
-        <button class="btn-main" id="start-btn" onclick="initExperience()">LOADING AI...</button>
+        <button class="btn-main" onclick="initExperience()">START SESSION</button>
       </div>
     </div>
 
@@ -113,7 +138,6 @@
       <div class="glass-card">
         <h1 style="color: var(--success-green);">MISSION COMPLETE</h1>
         <p>You have mastered the CPR cycle effectively.</p>
-        <p style="font-weight: bold; margin: 15px 0;">Repeat 30:2 cycle until help arrives or the person recovers</p>
         <button class="btn-main" onclick="location.reload()">RESTART</button>
       </div>
     </div>
@@ -128,7 +152,6 @@
         </div>
         <div class="controls">
           <button class="btn-reset" onclick="location.reload()">RESET</button>
-          <button id="call-step4-btn" class="btn-next" onclick="window.location.href='tel:112'">CALL EMERGENCY 📞</button>
           <button id="start-cpr-btn" class="btn-next" onclick="startCPR()">START COMPRESSIONS</button>
           <button id="next-btn-text" class="btn-next" onclick="nextStep()">CONTINUE →</button>
         </div>
@@ -141,41 +164,46 @@
       </a-assets>
 
       <a-marker preset="hiro">
-        <a-entity id="main-wrapper">
-            <a-entity id="group1">
-                <a-cone color="#00ff88" radius-bottom="0.2" height="0.6" position="0 0.6 0" rotation="180 0 0" animation="property: position; to: 0 0.8 0; dir: alternate; dur: 800; loop: true"></a-cone>
-                <a-text value="SCENE SAFE" align="center" position="0 1.3 0" scale="1.2 1.2 1.2"></a-text>
-            </a-entity>
-
-            <a-entity id="group2" visible="false">
-                <a-sphere color="#ffeb3b" radius="0.25" position="0 0.6 0" animation="property: scale; to: 1.3 1.3 1.3; dir: alternate; dur: 400; loop: true"></a-sphere>
-                <a-text value="CHECK RESPONSE" align="center" position="0 1.2 0" scale="1 1 1"></a-text>
-            </a-entity>
-
-            <a-entity id="group3" visible="false">
-                <a-torus color="#00f2fe" radius="0.2" radius-tubular="0.02" position="0 0.5 0" rotation="90 0 0"></a-torus>
-                <a-text value="OPEN AIRWAY" align="center" position="0 1 0" scale="1 1 1"></a-text>
-            </a-entity>
-
-            <a-entity id="group4" visible="false">
-                <a-box color="#ff8800" position="0 0.4 0" scale="0.4 0.4 0.4" animation="property: rotation; to: 0 360 0; dur: 3000; loop: true"></a-box>
-                <a-text value="CHECK BREATHING" align="center" position="0 1 0" scale="1 1 1"></a-text>
-            </a-entity>
-
-            <a-entity id="group5" visible="false">
-                <a-image id="hand-image" src="#cpr-hands" position="0 0.5 0" width="1.2" height="1.2" rotation="-90 0 0"
-                        animation="property: position; from: 0 0.5 0; to: 0 0.2 0; dur: 272.5; dir: alternate; loop: true; easing: easeInOutQuad; enabled: false">
-                </a-image>
-                <a-ring color="#ff4b2b" radius-inner="0.35" radius-outer="0.45" position="0 0.1 0" rotation="-90 0 0" 
-                        animation="property: material.opacity; from: 1; to: 0.2; dur: 272.5; dir: alternate; loop: true"></a-ring>
-                <a-text value="PUSH HERE" align="center" position="0 1.8 0" scale="1.8 1.8 1.8" color="#ff4b2b"></a-text>
-            </a-entity>
-
-            <a-entity id="group6" visible="false">
-                <a-sphere color="#00f2fe" radius="0.3" position="0 0.6 0" opacity="0.5" animation="property: scale; from: 1 1 1; to: 1.5 1.5 1.5; dur: 1000; loop: true; dir: alternate"></a-sphere>
-                <a-text value="GIVE 2 BREATHS" align="center" position="0 1.4 0" scale="1.2 1.2 1.2"></a-text>
-            </a-entity>
+        
+        <a-entity id="group1">
+          <a-cone color="#00ff88" radius-bottom="0.2" height="0.6" position="-2.0 1.5 0" rotation="180 0 0" animation="property: position; to: -2.0 1.7 0; dir: alternate; dur: 800; loop: true"></a-cone>
+          <a-text value="SCENE SAFE" align="center" position="-2.0 2.2 0" scale="1.5 1.5 1.5"></a-text>
         </a-entity>
+
+        <a-entity id="group2" visible="false">
+          <a-sphere color="#ffeb3b" radius="0.25" position="-2.0 1.6 -0.4" animation="property: scale; to: 1.3 1.3 1.3; dir: alternate; dur: 400; loop: true"></a-sphere>
+          <a-text value="CHECK RESPONSE" align="center" position="-2.0 2.2 -0.4" scale="1.2 1.2 1.2"></a-text>
+        </a-entity>
+
+        <a-entity id="group3" visible="false">
+          <a-torus color="#00f2fe" radius="0.2" radius-tubular="0.02" position="-2.0 1.5 -1" rotation="90 0 0"></a-torus>
+          <a-text value="OPEN AIRWAY" align="center" position="-2.0 2.0 -1" scale="1.2 1.2 1.2"></a-text>
+        </a-entity>
+
+        <a-entity id="group4" visible="false">
+          <a-box color="#ff8800" position="-2.0 1.4 -0.6" scale="0.4 0.4 0.4" animation="property: rotation; to: 0 360 0; dur: 3000; loop: true"></a-box>
+          <a-text value="CHECK BREATHING" align="center" position="-2.0 2.0 -0.6" scale="1.2 1.2 1.2"></a-text>
+        </a-entity>
+
+        <a-entity id="group5" visible="false">
+          <a-image id="hand-image" src="#cpr-hands" 
+                   position="-2.0 1.5 0" 
+                   width="1.8" height="1.8" 
+                   rotation="-90 0 0"
+                   animation="property: position; from: -2.0 1.5 0; to: -2.0 1.1 0; dur: 272.5; dir: alternate; loop: true; easing: easeInOutQuad; enabled: false">
+          </a-image>
+
+          <a-ring color="#ff4b2b" radius-inner="0.35" radius-outer="0.45" position="-2.0 1.05 0" rotation="-90 0 0" 
+                  animation="property: material.opacity; from: 1; to: 0.2; dur: 272.5; dir: alternate; loop: true"></a-ring>
+          
+          <a-text value="PUSH HERE" align="center" position="-2.0 3.0 0" scale="2.5 2.5 2.5" color="#ff4b2b"></a-text>
+        </a-entity>
+
+        <a-entity id="group6" visible="false">
+          <a-sphere color="#00f2fe" radius="0.3" position="-2.0 1.6 -1" opacity="0.5" animation="property: scale; from: 1 1 1; to: 1.5 1.5 1.5; dur: 1000; loop: true; dir: alternate"></a-sphere>
+          <a-text value="GIVE 2 BREATHS" align="center" position="-2.0 2.4 -1" scale="1.5 1.5 1.5"></a-text>
+        </a-entity>
+
       </a-marker>
       <a-entity camera></a-entity>
     </a-scene>
@@ -184,7 +212,6 @@
       let currentStep = 1;
       let count = 0;
       let timer = null;
-      let net = null;
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
       const stepsText = [
@@ -196,66 +223,31 @@
         "Give 2 rescue breaths. Repeat 30:2 cycle until help arrives or the person recovers."
       ];
 
-      // Load AI Model on Start
-      window.onload = async () => {
-        net = await posenet.load();
-        document.getElementById('start-btn').innerText = "START SESSION";
-      };
+      function beep(freq, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+      }
 
-      async function initExperience() {
+      function initExperience() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         document.getElementById('landing-page').style.opacity = '0';
         setTimeout(() => {
           document.getElementById('landing-page').style.display = 'none';
           document.getElementById('ar-ui').style.display = 'block';
           document.getElementById('sos-btn').style.display = 'block';
-          startAIScanner(); // Start AI tracking
         }, 800);
-      }
-
-      // The AI Detection Engine
-      async function startAIScanner() {
-        const video = document.querySelector('video');
-        if(!video) return;
-
-        setInterval(async () => {
-          if (currentStep >= 2) { // Start AI mapping from step 2 onwards
-            const pose = await net.estimateSinglePose(video, { flipHorizontal: false });
-            if (pose.score > 0.3) {
-              updateARPosition(pose.keypoints);
-            }
-          }
-        }, 200);
-      }
-
-      function updateARPosition(keypoints) {
-        const lShoulder = keypoints.find(k => k.part === 'leftShoulder');
-        const rShoulder = keypoints.find(k => k.part === 'rightShoulder');
-        const nose = keypoints.find(k => k.part === 'nose');
-
-        const wrapper = document.getElementById('main-wrapper');
-
-        // Logic: Calculate Center of Chest based on shoulders
-        if (lShoulder.score > 0.5 && rShoulder.score > 0.5) {
-            let bodyWidth = Math.abs(lShoulder.position.x - rShoulder.position.x);
-            let scaleVal = bodyWidth / 200; // Auto-scale based on person's size
-            
-            // Adjust AR scale to match person
-            wrapper.setAttribute('scale', `${scaleVal} ${scaleVal} ${scaleVal}`);
-            
-            // Step 5 (Press Here) calculation: Midpoint between shoulders
-            if (currentStep === 5) {
-                // We keep it centered on marker but scale reflects the person
-            }
-        }
       }
 
       function nextStep() {
         clearInterval(timer);
         document.getElementById('cpr-counter').style.display = 'none';
+        
         document.getElementById('next-btn-text').style.display = 'block';
         document.getElementById('start-cpr-btn').style.display = 'none';
-        document.getElementById('call-step4-btn').style.display = 'none';
 
         if (currentStep < 6) {
           document.getElementById('group' + currentStep).setAttribute('visible', 'false');
@@ -266,12 +258,12 @@
           document.getElementById('text-info').innerText = stepsText[currentStep - 1];
           document.getElementById('progress-bar').style.width = (currentStep * 16.6) + '%';
           
-          if (currentStep === 4) document.getElementById('call-step4-btn').style.display = 'block';
+          if (currentStep === 6) document.getElementById('next-btn-text').innerText = "FINISH ✓";
+          
           if (currentStep === 5) {
             document.getElementById('next-btn-text').style.display = 'none';
             document.getElementById('start-cpr-btn').style.display = 'block';
           }
-          if (currentStep === 6) document.getElementById('next-btn-text').innerText = "FINISH ✓";
         } else {
           showFinishPage();
         }
@@ -283,6 +275,7 @@
         document.getElementById('cpr-counter').style.display = 'block';
         document.getElementById('cpr-counter').innerText = count;
         document.getElementById('start-cpr-btn').style.display = 'none';
+        
         handImg.setAttribute('animation', 'enabled: true');
         
         timer = setInterval(() => {
@@ -297,15 +290,6 @@
             document.getElementById('next-btn-text').style.display = 'block';
           }
         }, 545);
-      }
-
-      function beep(freq, duration) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
       }
 
       function showFinishPage() {
